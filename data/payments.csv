@@ -1,0 +1,3 @@
+payment_id,invoice_id,amount,status,date
+PAY2001,INV1001,1800000,Success,2026-08-02
+PAY2002,INV1002,1200000,Success,2026-08-04
