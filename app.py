@@ -3,6 +3,7 @@ import pandas as pd
 
 from src.reconciliation import reconcile_financial_records
 from src.investigation import generate_investigation
+from src.anomaly_analyzer import analyze_anomaly
 
 
 # --------------------------------------------------
@@ -59,6 +60,30 @@ result = reconcile_financial_records(
 
 
 # --------------------------------------------------
+# ANOMALY ANALYSIS
+# --------------------------------------------------
+
+anomaly_results = []
+
+for _, row in result.iterrows():
+
+    analysis = analyze_anomaly(row)
+
+    anomaly_results.append(analysis)
+
+
+anomaly_df = pd.DataFrame(anomaly_results)
+
+result = pd.concat(
+    [
+        result.reset_index(drop=True),
+        anomaly_df.reset_index(drop=True)
+    ],
+    axis=1
+)
+
+
+# --------------------------------------------------
 # KEY METRICS
 # --------------------------------------------------
 
@@ -68,12 +93,14 @@ total_payments = payments["amount"].sum()
 
 total_refunds = refunds["amount"].sum()
 
-total_accounting = accounting["recorded_expense"].sum()
-
-total_mismatch = result["accounting_difference"].abs().sum()
+total_mismatch = result["financial_impact"].sum()
 
 unreconciled_count = (
     result["reconciliation_status"] == "UNRECONCILED"
+).sum()
+
+anomaly_count = (
+    result["anomaly_type"] != "NO ANOMALY"
 ).sum()
 
 
@@ -101,7 +128,7 @@ with col3:
 
 with col4:
     st.metric(
-        "Total Mismatch",
+        "Total Anomaly Impact",
         f"₹{total_mismatch:,.0f}"
     )
 
@@ -114,7 +141,7 @@ st.markdown("---")
 
 st.header("🔍 Reconciliation Summary")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     st.success(
@@ -128,9 +155,55 @@ with col2:
         f"{unreconciled_count}"
     )
 
+with col3:
+    st.warning(
+        f"🚨 Anomalies Detected: "
+        f"{anomaly_count}"
+    )
+
 
 # --------------------------------------------------
-# TRANSACTION RESULTS
+# ANOMALY SUMMARY
+# --------------------------------------------------
+
+st.markdown("---")
+
+st.header("🚨 Anomaly Analysis")
+
+for _, row in result.iterrows():
+
+    if row["anomaly_type"] == "NO ANOMALY":
+
+        st.success(
+            f"✅ {row['invoice_id']} — No anomaly detected"
+        )
+
+    else:
+
+        if row["severity"] == "CRITICAL":
+            st.error(
+                f"🔴 {row['invoice_id']} — "
+                f"{row['anomaly_type']} — "
+                f"CRITICAL"
+            )
+
+        elif row["severity"] == "HIGH":
+            st.warning(
+                f"🟠 {row['invoice_id']} — "
+                f"{row['anomaly_type']} — "
+                f"HIGH"
+            )
+
+        else:
+            st.info(
+                f"🟡 {row['invoice_id']} — "
+                f"{row['anomaly_type']} — "
+                f"{row['severity']}"
+            )
+
+
+# --------------------------------------------------
+# TRANSACTION RECONCILIATION
 # --------------------------------------------------
 
 st.markdown("---")
@@ -147,7 +220,10 @@ display_columns = [
     "expected_expense",
     "accounting_difference",
     "reconciliation_status",
-    "issue_type"
+    "issue_type",
+    "anomaly_type",
+    "severity",
+    "financial_impact"
 ]
 
 st.dataframe(
@@ -169,65 +245,75 @@ for _, row in result.iterrows():
 
     explanation, recommendation = generate_investigation(row)
 
-    if row["reconciliation_status"] == "UNRECONCILED":
+    with st.expander(
+        f"{'⚠️' if row['anomaly_type'] != 'NO ANOMALY' else '✅'} "
+        f"{row['invoice_id']} — {row['anomaly_type']}"
+    ):
 
-        with st.expander(
-            f"⚠️ {row['invoice_id']} — "
-            f"{row['issue_type']}"
-        ):
+        st.markdown("### 🚨 Anomaly Details")
 
-            st.write("### Financial Evidence")
+        st.write(
+            f"**Anomaly Type:** "
+            f"{row['anomaly_type']}"
+        )
 
-            st.write(
-                f"**Invoice Amount:** "
-                f"₹{row['amount_invoice']:,.0f}"
-            )
+        st.write(
+            f"**Severity:** "
+            f"{row['severity']}"
+        )
 
-            st.write(
-                f"**Payment Amount:** "
-                f"₹{row['amount_payment']:,.0f}"
-            )
+        st.write(
+            f"**Financial Impact:** "
+            f"₹{row['financial_impact']:,.0f}"
+        )
 
-            st.write(
-                f"**Refund Amount:** "
-                f"₹{row['refund_amount']:,.0f}"
-            )
+        st.write(
+            f"**Reason:** "
+            f"{row['reason']}"
+        )
 
-            st.write(
-                f"**Accounting Expense:** "
-                f"₹{row['recorded_expense']:,.0f}"
-            )
+        st.markdown("### 💰 Financial Evidence")
 
-            st.write(
-                f"**Expected Expense:** "
-                f"₹{row['expected_expense']:,.0f}"
-            )
+        st.write(
+            f"**Invoice Amount:** "
+            f"₹{row['amount_invoice']:,.0f}"
+        )
 
-            st.write(
-                f"**Financial Difference:** "
-                f"₹{row['accounting_difference']:,.0f}"
-            )
+        st.write(
+            f"**Payment Amount:** "
+            f"₹{row['amount_payment']:,.0f}"
+        )
 
-            st.markdown("### 📝 Explanation")
+        st.write(
+            f"**Refund Amount:** "
+            f"₹{row['refund_amount']:,.0f}"
+        )
 
-            st.info(explanation)
+        st.write(
+            f"**Accounting Expense:** "
+            f"₹{row['recorded_expense']:,.0f}"
+        )
 
-            st.markdown("### 💡 Recommended Action")
+        st.write(
+            f"**Expected Expense:** "
+            f"₹{row['expected_expense']:,.0f}"
+        )
 
+        st.write(
+            f"**Accounting Difference:** "
+            f"₹{row['accounting_difference']:,.0f}"
+        )
+
+        st.markdown("### 📝 Investigation Explanation")
+
+        st.info(explanation)
+
+        st.markdown("### 💡 Recommended Action")
+
+        if row["anomaly_type"] == "NO ANOMALY":
+            st.success(recommendation)
+        else:
             st.warning(recommendation)
-
-    else:
-
-        with st.expander(
-            f"✅ {row['invoice_id']} — Reconciled"
-        ):
-
-            st.success(explanation)
-
-            st.write(
-                f"**Recommended Action:** "
-                f"{recommendation}"
-            )
 
 
 # --------------------------------------------------
@@ -237,5 +323,6 @@ for _, row in result.iterrows():
 st.markdown("---")
 
 st.caption(
-    "FinTrace AI — Automated Financial Reconciliation & Investigation"
+    "FinTrace AI — Automated Financial Reconciliation, "
+    "Anomaly Detection & Investigation"
 )
