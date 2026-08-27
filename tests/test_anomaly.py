@@ -55,3 +55,15 @@ def test_accounting_mismatch():
     assert result["anomaly_type"] == "ACCOUNTING MISMATCH"
     assert result["severity"] == "HIGH"
     assert result["financial_impact"] == 250000
+def test_critical_accounting_mismatch():
+
+    row = {
+        "accounting_difference": 2000000,
+        "refund_amount": 0
+    }
+
+    result = analyze_anomaly(row)
+
+    assert result["anomaly_type"] == "ACCOUNTING MISMATCH"
+    assert result["severity"] == "CRITICAL"
+    assert result["financial_impact"] == 2000000    

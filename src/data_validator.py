@@ -4,6 +4,11 @@ import pandas as pd
 def validate_data(df, name, id_column):
     print(f"\n=== {name} VALIDATION ===")
 
+    # Required ID column check
+    if id_column not in df.columns:
+        print(f"❌ Required column '{id_column}' is missing")
+        return
+    
     # Missing values
     missing = df.isnull().sum()
 
@@ -21,15 +26,33 @@ def validate_data(df, name, id_column):
     else:
         print(f"⚠️ {duplicates} duplicate ID(s) found")
 
-    # Negative amounts
+    # Amount validation
     if "amount" in df.columns:
-        negative_amounts = (df["amount"] < 0).sum()
 
-        if negative_amounts == 0:
-            print("✅ No negative amounts")
-        else:
-            print(f"⚠️ {negative_amounts} negative amount(s) found")
+        numeric_amounts = pd.to_numeric(
+        df["amount"],
+        errors="coerce"
+    )
 
+    invalid_amounts = numeric_amounts.isna().sum()
+
+    if invalid_amounts == 0:
+        print("✅ All amounts are numeric")
+    else:
+        print(
+            f"⚠️ {invalid_amounts} invalid amount(s) found"
+        )
+
+    negative_amounts = (
+        numeric_amounts.dropna() < 0
+    ).sum()
+
+    if negative_amounts == 0:
+        print("✅ No negative amounts")
+    else:
+        print(
+            f"⚠️ {negative_amounts} negative amount(s) found"
+        )
 
 def main():
     invoices = pd.read_csv("data/invoices.csv")
