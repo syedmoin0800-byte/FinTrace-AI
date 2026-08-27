@@ -74,6 +74,16 @@ for _, row in result.iterrows():
 
 anomaly_df = pd.DataFrame(anomaly_results)
 
+# Keep only anomaly-related columns.
+# "reason" already exists in the reconciliation result.
+anomaly_columns = [
+    "anomaly_type",
+    "severity",
+    "financial_impact"
+]
+
+anomaly_df = anomaly_df[anomaly_columns]
+
 result = pd.concat(
     [
         result.reset_index(drop=True),
