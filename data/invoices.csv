@@ -1,3 +1,3 @@
 invoice_id,vendor,department,amount,date
-INV1001,Sunrise Locations,Location,1800000,2026-08-01
-INV1002,Elite Cameras,Equipment,1200000,2026-08-03
+INV1001,Sunrise Locations,Location,2000000,8/1/2026
+INV1002,Elite Cameras,Equipment,1200000,8/3/2026
