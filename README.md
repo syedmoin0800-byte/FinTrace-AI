@@ -169,6 +169,7 @@ FinTrace AI performs the following processing stages:
 
 ### Step 5
 Review the generated results.
+
 ## 🔍 Transaction Reconciliation
 The Transaction Reconciliation section compares financial records and presents transaction-level information such as:
 - Invoice ID
@@ -185,6 +186,7 @@ The Transaction Reconciliation section compares financial records and presents t
 - Severity
 - Financial impact
 This allows users to identify problematic transactions quickly.
+
 ## 🚨 Anomaly Detection
 FinTrace AI analyzes reconciliation results to identify potential anomalies.
 Detected issues can be classified by severity, including:
@@ -245,6 +247,7 @@ Test 10 | File Change Detection | ✅ PASS
 FinTrace AI was also tested with modified financial data.
 When an uploaded financial file is changed and submitted again, the application processes the updated data instead of blindly displaying the previous analysis.
 This verifies that the reconciliation results respond to changes in the input data.
+
 ## 💡 Example Use Cases
 FinTrace AI can be useful for:
 - Financial reconciliation
